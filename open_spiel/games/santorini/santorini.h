@@ -43,7 +43,7 @@ inline constexpr std::array<std::pair<short, short>, 8> kDirections = {
 };
 
 inline constexpr std::array<const char*, 8> kDirectionSymbols = {
-  "↖", "↑", "↗", "←", "→", "↙", "↓", "↘"
+  "7", "8", "9", "4", "6", "1", "2", "3"
 };
 // State of a cell.
 using CellState = int;
