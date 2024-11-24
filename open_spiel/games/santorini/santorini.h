@@ -51,6 +51,16 @@ using CellState = int;
 std::array<std::pair<CellState, CellState>, kNumPlacementActions> GeneratePlacementActionWorkerPositions();
 inline const std::array<std::pair<CellState, CellState>, kNumPlacementActions> kPlacementActionWorkerPositions = GeneratePlacementActionWorkerPositions();
 
+// Helper functions
+int Height(CellState cell);
+bool IsOccupied(CellState cell);
+bool IsNeighbour(CellState cell1, CellState cell2);
+std::pair<int, int> Coord(CellState cell);
+char CellStateToChar(CellState state);
+
+inline std::ostream& operator<<(std::ostream& stream, const CellState& state) {
+  return stream << CellStateToChar(state);
+}
 
 enum class SantoriniActionType {
   kPlacement,
@@ -61,6 +71,28 @@ class SantoriniAction {
  public:
   SantoriniAction() : action_(0) {}
   explicit SantoriniAction(Action action) : action_(action) {}
+  explicit SantoriniAction(std::string action_str) {
+      if (action_str[0] == 'P') {
+        // Parse placement action
+        int cell1_x = action_str[1] - '0';
+        int cell1_y = action_str[2] - '0';
+        int cell2_x = action_str[3] - '0';
+        int cell2_y = action_str[4] - '0';
+        CellState cell1 = cell1_x * kNumCols + cell1_y;
+        CellState cell2 = cell2_x * kNumCols + cell2_y;
+        action_ = (cell2 - 1) + (kNumCells - 2) * cell1 - cell1 * (cell1 - 1) / 2;
+      } else if (action_str[1] == 'M' && action_str[3] == 'B') {
+        // Parse move and build action
+        int worker_id = action_str[0] - '0';
+        std::string move_symbol(1, action_str[2]);
+        std::string build_symbol(1, action_str[4]);
+        int move_direction_id = std::distance(kDirectionSymbols.begin(), std::find(kDirectionSymbols.begin(), kDirectionSymbols.end(), move_symbol));
+        int build_direction_id = std::distance(kDirectionSymbols.begin(), std::find(kDirectionSymbols.begin(), kDirectionSymbols.end(), build_symbol));
+        action_ = worker_id * 64 + move_direction_id * 8 + build_direction_id + kNumPlacementActions;
+      } else {
+        throw std::invalid_argument("Invalid action string");
+      }
+  }
   explicit SantoriniAction(CellState cell1, CellState cell2) : action_((cell2 - 1) + (kNumCells - 2) * cell1 - cell1 * (cell1 - 1) / 2) {}
   explicit SantoriniAction(int worker_id, int move_direction_id, int build_direction_id)
       : action_(worker_id * 64 + move_direction_id * 8 + build_direction_id + kNumPlacementActions) {}
@@ -70,7 +102,21 @@ class SantoriniAction {
   std::pair<short, short> move_direction() const { return kDirections[((action_ - kNumPlacementActions) % 64) / 8]; }
   std::pair<short, short> build_direction() const { return kDirections[(action_ - kNumPlacementActions) % 8]; }
   int action() const { return action_; }
-
+  std::string ToString() const {
+    if (action_type() == SantoriniActionType::kPlacement) {
+      auto [cell1, cell2] = kPlacementActionWorkerPositions[action_];
+      auto [cell1_x, cell1_y] = Coord(cell1);
+      auto [cell2_x, cell2_y] = Coord(cell2);
+      // format "P{cell1_row}{cell1_col}{cell2_row}{cell2_col}"
+      return "P" + std::to_string(cell1_x) + std::to_string(cell1_y) +
+         std::to_string(cell2_x) + std::to_string(cell2_y);
+    } else {
+      // format "MB{cell1_row}{cell1_col}{cell2_row}{cell2_col}"
+      auto move_direction_id = ((action_ - kNumPlacementActions) % 64) / 8;
+      auto build_direction_id = (action_ - kNumPlacementActions) % 8;
+      return std::to_string(worker_id()) + "M" + kDirectionSymbols[move_direction_id] + "B" + kDirectionSymbols[build_direction_id];
+    }
+  }
  private:
   Action action_;
 };
@@ -87,6 +133,7 @@ class SantoriniState : public State {
     return IsTerminal() ? kTerminalPlayerId : current_player_;
   }
   std::string ActionToString(Player player, Action action_id) const override;
+  Action StringToAction(Player player, const std::string& action_str) const override;
   std::string ToString() const override;
   bool IsTerminal() const override;
   std::vector<double> Returns() const override;
@@ -111,18 +158,6 @@ class SantoriniState : public State {
   std::vector<Action> legal_actions_ = std::vector<Action>(0);
   std::vector<std::pair<CellState, CellState>> worker_positions_ = std::vector<std::pair<CellState, CellState>>(kNumPlayers);
 };
-
-// Helper functions
-int Height(CellState cell);
-bool IsOccupied(CellState cell);
-bool IsNeighbour(CellState cell1, CellState cell2);
-std::pair<int, int> Coord(CellState cell);
-
-std::string CellStateToString(CellState state);
-
-inline std::ostream& operator<<(std::ostream& stream, const CellState& state) {
-  return stream << CellStateToString(state);
-}
 
 // Game object.
 class SantoriniGame : public Game {

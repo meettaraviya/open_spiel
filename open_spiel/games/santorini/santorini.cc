@@ -59,27 +59,26 @@ int Height(CellState cell) {
   return cell & ((1 << kNumFloorBits) - 1);
 }
 
-std::string CellStateToString(CellState state) {
-  std::string str, height_char = " ";
-  switch (Height(state))
-  {
-  case 0: height_char = "⚬"; break;
-  case 1: height_char = "−"; break;
-  case 2: height_char = "="; break;
-  case 3: height_char = "≡"; break;
-  case 4: height_char = "●"; break;
-  default: break;
+char CellStateToChar(CellState state) {
+  // std::string str, height_char = " ";
+  // switch (Height(state))
+  // {
+  // case 0: height_char = "⚬"; break;
+  // case 1: height_char = "−"; break;
+  // case 2: height_char = "="; break;
+  // case 3: height_char = "≡"; break;
+  // case 4: height_char = "●"; break;
+  // default: break;
+  // }
+  char base_char = '0';
+  int h = Height(state);
+  if(state >> kNumFloorBits == 1) {
+    return 'a' + h;
+  } else if(state >> kNumFloorBits == 2) {
+    return 'A' + h;
+  } else {
+    return '0' + h;
   }
-
-  switch(state >> kNumFloorBits)
-  {
-    case 0: str += height_char; break;
-    case 1: str += "\033[31m"; str += height_char; str += "\033[0m"; break; // Red for player 0
-    case 2: str += "\033[34m"; str += height_char; str += "\033[0m"; break; // Blue for player 1
-    default: str += height_char; break;
-  }
-  
-  return str;
 }
 
 bool IsOccupied(CellState cell) {
@@ -200,23 +199,11 @@ std::vector<Action> SantoriniState::LegalActions() const {
 
 std::string SantoriniState::ActionToString(Player player, Action action_id) const {
   SantoriniAction action(action_id);
-  if (num_workers_placed_ < 4) {
-    auto [worker1, worker2] = kPlacementActionWorkerPositions[action.action()];
-    // format "#{player_id}[(worker1_row, worker1_col),(worker2_row, worker2_col)]"
-    auto [worker1_row, worker1_col] = Coord(worker1);
-    auto [worker2_row, worker2_col] = Coord(worker2);
-    return absl::StrCat(player, "[(", worker1_row, ",", worker1_col, "),(", worker2_row, ",", worker2_col, ")]");
-  } else {
-    int worker_id = action.worker_id();
-    CellState from_position = (worker_id == 0)? worker_positions_[current_player_].first : worker_positions_[current_player_].second;
-    CellState to_position = from_position + action.move_direction().first * kNumCols + action.move_direction().second;
-    CellState build_position = to_position + action.build_direction().first * kNumCols + action.build_direction().second;
-    // format "#{player_id}[(from_row,from_col)->(to_row, to_col)@(build_row, build_col)]"
-    auto [from_row, from_col] = Coord(from_position);
-    auto [to_row, to_col] = Coord(to_position);
-    auto [build_row, build_col] = Coord(build_position);
-    return absl::StrCat(player, "[(", from_row, ",", from_col, ")->(", to_row, ",", to_col, ")@(", build_row, ",", build_col, ")]");
-  }
+  return action.ToString();
+}
+
+Action SantoriniState::StringToAction(Player player, const std::string& action_str) const{
+  return SantoriniAction(action_str).action();
 }
 
 SantoriniState::SantoriniState(std::shared_ptr<const Game> game) : State(game) {
@@ -225,16 +212,16 @@ SantoriniState::SantoriniState(std::shared_ptr<const Game> game) : State(game) {
 }
 
 std::string SantoriniState::ToString() const {
-  std::string str;
+  char str[kNumCells + kNumRows - 1];
   for (int r = 0; r < kNumRows; ++r) {
     for (int c = 0; c < kNumCols; ++c) {
-      absl::StrAppend(&str, CellStateToString(board_[r * kNumCols + c]), " ");
+      str[r * (kNumCols + 1) + c] = CellStateToChar(board_[r * kNumCols + c]);
     }
     if (r < (kNumRows - 1)) {
-      absl::StrAppend(&str, "\n");
+      str[(r + 1) * (kNumCols + 1) - 1] = '\n';
     }
   }
-  return str;
+  return std::string(str);
 }
 
 bool SantoriniState::IsTerminal() const {
@@ -292,18 +279,7 @@ std::string SantoriniGame::ActionToString(Player player,
                                           Action action_id) const
 {
   SantoriniAction action(action_id);
-  if (action_id < kNumPlacementActions) {
-    auto [worker1, worker2] = kPlacementActionWorkerPositions[action.action()];
-    // format "#{player_id}[(worker1_row, worker1_col),(worker2_row, worker2_col)]"
-    auto [worker1_row, worker1_col] = Coord(worker1);
-    auto [worker2_row, worker2_col] = Coord(worker2);
-    return absl::StrCat("#", player, "[(", worker1_row, ",", worker1_col, "),(", worker2_row, ",", worker2_col, ")]");
-  } else {
-    auto move_direction_id = ((action_id - kNumPlacementActions) % 64) / 8;
-    auto build_direction_id = (action_id - kNumPlacementActions) % 8;
-    // format "#{player_id}[W{worker_id} M{move_direction_symbol} B{build_direction_symbol}]"
-    return absl::StrCat("#", player, "[W", action.worker_id(), " M", kDirectionSymbols[move_direction_id], "B", kDirectionSymbols[build_direction_id], "]");
-  }
+  return action.ToString();
 }
 
 SantoriniGame::SantoriniGame(const GameParameters& params)
