@@ -95,12 +95,8 @@ class SantoriniState : public State {
   void ObservationTensor(Player player,
                          absl::Span<float> values) const override;
   std::unique_ptr<State> Clone() const override;
-  // void UndoAction(Player player, Action move) override;
   std::vector<Action> LegalActions() const override;
-  // CellState BoardAt(int cell) const { return board_[cell]; }
-  // CellState BoardAt(int row, int column) const {
-  //   return board_[row * kNumCols + column];
-  // }
+  void SetLegalActions();
   Player outcome() const { return outcome_; }
 
  protected:
@@ -112,6 +108,7 @@ class SantoriniState : public State {
   Player outcome_ = kInvalidPlayer;
   int num_workers_placed_ = 0;
   int num_moves_ = 0;
+  std::vector<Action> legal_actions_ = std::vector<Action>(0);
   std::vector<std::pair<CellState, CellState>> worker_positions_ = std::vector<std::pair<CellState, CellState>>(kNumPlayers);
 };
 
@@ -120,7 +117,6 @@ int Height(CellState cell);
 bool IsOccupied(CellState cell);
 bool IsNeighbour(CellState cell1, CellState cell2);
 std::pair<int, int> Coord(CellState cell);
-// std::pair<int, int> AddTuples(const std::pair<int, int>& t1, const std::pair<int, int>& t2);
 
 std::string CellStateToString(CellState state);
 
