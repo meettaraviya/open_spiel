@@ -96,10 +96,6 @@ std::pair<int, int> Coord(CellState cell) {
   return {cell / kNumCols, cell % kNumCols};
 }
 
-// std::pair<int, int> AddTuples(const std::pair<int, int>& t1, const std::pair<int, int>& t2) {
-//   return {t1.first + t2.first, t1.second + t2.second};
-// }
-
 std::array<std::pair<CellState, CellState>, kNumPlacementActions> GeneratePlacementActionWorkerPositions() {
   std::array<std::pair<CellState, CellState>, kNumPlacementActions> positions;
   int index = 0;
@@ -143,33 +139,26 @@ void SantoriniState::DoApplyAction(Action action_id) {
   }
 
   current_player_ = 1 - current_player_;
+  SetLegalActions();
 }
 
-
-
-// void SantoriniState::DoApplyAction(Action move) {
-//   SPIEL_CHECK_EQ(board_[move], 0);
-//   board_[move] = PlayerToState(CurrentPlayer());
-//   if (HasLine(current_player_)) {
-//     outcome_ = current_player_;
-//   }
-//   current_player_ = 1 - current_player_;
-//   num_moves_ += 1;
-// }
-
-std::vector<Action> SantoriniState::LegalActions() const {
-  std::vector<Action> actions;
+void SantoriniState::SetLegalActions() {
+  legal_actions_.clear();
+  if(outcome_ != kInvalidPlayer){
+    return;
+  }
   if(num_workers_placed_ < 4){
     for (int i = 0; i < kNumPlacementActions; ++i) {
       if (board_[kPlacementActionWorkerPositions[i].first] == 0 &&
           board_[kPlacementActionWorkerPositions[i].second] == 0) {
-        actions.push_back(i);
+        legal_actions_.push_back(i);
       }
     }
   } else if(
-      (Height(board_[worker_positions_[current_player_].first]) < kNumFloors + 1) &&
-      (Height(board_[worker_positions_[current_player_].second]) < kNumFloors + 1)
-    ) {
+      (Height(board_[worker_positions_[current_player_].first]) < kNumFloors) &&
+      (Height(board_[worker_positions_[current_player_].second]) < kNumFloors)
+    )
+  {
     // Iterate over all workers and all possible moves and builds, and check if they are legal.
     for (int worker_id = 0; worker_id < 2; ++worker_id) {
       CellState from_position = (worker_id == 0) ? worker_positions_[current_player_].first : worker_positions_[current_player_].second;
@@ -194,14 +183,20 @@ std::vector<Action> SantoriniState::LegalActions() const {
           if (IsOccupied(board_[build_position]) || Height(board_[build_position]) == kNumFloors + 1) {
             continue;
           }
-          actions.push_back(SantoriniAction(worker_id, move_direction_id, build_direction_id).action());
+          legal_actions_.push_back(SantoriniAction(worker_id, move_direction_id, build_direction_id).action());
         }
       }
     }
   }
-  return actions;
+  if (legal_actions_.size() == 0) {
+    outcome_ = 1 - current_player_;
+  }
 }
 
+
+std::vector<Action> SantoriniState::LegalActions() const {
+  return legal_actions_;
+}
 
 std::string SantoriniState::ActionToString(Player player, Action action_id) const {
   SantoriniAction action(action_id);
@@ -224,16 +219,9 @@ std::string SantoriniState::ActionToString(Player player, Action action_id) cons
   }
 }
 
-// bool SantoriniState::HasLine(Player player) const {
-//   // Implement the logic to check if the player has a winning line.
-//   // This is a placeholder implementation.
-//   return false;
-// }
-
-// bool SantoriniState::IsFull() const { return num_moves_ == kNumCells; }
-
 SantoriniState::SantoriniState(std::shared_ptr<const Game> game) : State(game) {
   std::fill(begin(board_), end(board_), 0);
+  SetLegalActions();
 }
 
 std::string SantoriniState::ToString() const {
@@ -250,7 +238,7 @@ std::string SantoriniState::ToString() const {
 }
 
 bool SantoriniState::IsTerminal() const {
-  return outcome_ != kInvalidPlayer || LegalActions().size() == 0;
+  return outcome_ != kInvalidPlayer;
 }
 
 std::vector<double> SantoriniState::Returns() const {
@@ -295,29 +283,6 @@ void SantoriniState::ObservationTensor(Player player,
     }
   }
 }
-
-// void SantoriniState::UndoAction(Player player, Action action_id) {
-//   auto action = SantoriniAction(action_id);
-//   if (action.action_type() == SantoriniActionType::kPlacement) {
-//     auto [worker1, worker2] = kPlacementActionWorkerPositions[action.action()];
-//     board_[worker1] = 0;
-//     board_[worker2] = 0;
-//     worker_positions_[current_player_] = {-1, -1};
-//     num_workers_placed_ -= 2;
-//   } else {
-//     int worker_id = action.worker_id();
-//     CellState to_position = (worker_id == 0)? worker_positions_[current_player_].first : worker_positions_[current_player_].second;
-//     CellState from_position = to_position - action.move_direction().first * kNumCols - action.move_direction().second;
-//     CellState build_position = to_position + action.build_direction().first * kNumCols + action.build_direction().second;
-//     board_[from_position] = board_[from_position] & ((1 << kNumFloorBits) - 1);
-//     board_[to_position] = board_[to_position] | (1 << (kNumFloorBits + current_player_));
-//     board_[build_position] += 1;
-//     (worker_id == 0)? worker_positions_[current_player_].first : worker_positions_[current_player_].second = to_position;
-//     if (worker_positions_[current_player_].first > worker_positions_[current_player_].second) {
-//       std::swap(worker_positions_[current_player_].first, worker_positions_[current_player_].second);
-//     }
-//   }
-// }
 
 std::unique_ptr<State> SantoriniState::Clone() const {
   return std::unique_ptr<State>(new SantoriniState(*this));
