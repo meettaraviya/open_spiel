@@ -166,7 +166,10 @@ std::vector<Action> SantoriniState::LegalActions() const {
         actions.push_back(i);
       }
     }
-  } else {
+  } else if(
+      (Height(board_[worker_positions_[current_player_].first]) < kNumFloors + 1) &&
+      (Height(board_[worker_positions_[current_player_].second]) < kNumFloors + 1)
+    ) {
     // Iterate over all workers and all possible moves and builds, and check if they are legal.
     for (int worker_id = 0; worker_id < 2; ++worker_id) {
       CellState from_position = (worker_id == 0) ? worker_positions_[current_player_].first : worker_positions_[current_player_].second;
