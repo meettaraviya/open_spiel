@@ -279,10 +279,17 @@ void SantoriniState::ObservationTensor(Player player,
   SPIEL_CHECK_GE(player, 0);
   SPIEL_CHECK_LT(player, num_players_);
 
-  // Treat `values` as a 2-d tensor.
-  TensorView<2> view(values, {kCellStates, kNumCells}, true);
+  TensorView<3> view(values, {kCellStates, kNumRows, kNumCols}, true);
   for (int cell = 0; cell < kNumCells; ++cell) {
-    view[{board_[cell], cell}] = 1.0;
+    auto [i, j] = Coord(cell);
+    auto h = Height(board_[cell]);
+    if(h > 0) {
+      view[{h - 1, i, j}] = 1.0;
+      }
+    if (IsOccupied(board_[cell])){
+      auto k = ((board_[cell] >> kNumFloorBits) == 1) == (current_player_ == 0) ? 0 : 1;
+      view[{kNumFloors + 1 + k, i, j}] = 1.0;
+    }
   }
 }
 
