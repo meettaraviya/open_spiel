@@ -18,6 +18,7 @@ import logging
 from absl import app
 from absl import flags
 import numpy as np
+import open_spiel.python.games
 
 from open_spiel.python import rl_environment
 
@@ -54,8 +55,8 @@ def turn_based_example(unused_arg):
   logging.info("Registered games: %s", rl_environment.registered_games())
   logging.info("Creating game %s", FLAGS.game)
 
-  env_configs = {"players": FLAGS.num_players} if FLAGS.num_players else {}
-  env = rl_environment.Environment(FLAGS.game, **env_configs)
+  env_configs = {"num_players": FLAGS.num_players} if FLAGS.num_players else {}
+  env = rl_environment.Environment(FLAGS.game)
 
   logging.info("Env specs: %s", env.observation_spec())
   logging.info("Action specs: %s", env.action_spec())

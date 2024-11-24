@@ -17,6 +17,7 @@
 from absl import app
 from absl import flags
 
+import open_spiel.python.games
 from open_spiel.python.algorithms.alpha_zero import alpha_zero
 from open_spiel.python.algorithms.alpha_zero import model as model_lib
 from open_spiel.python.utils import spawn
