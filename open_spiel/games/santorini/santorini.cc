@@ -180,7 +180,7 @@ void SantoriniState::SetLegalActions() {
             continue;
           }
           CellState build_position = build_x * kNumCols + build_y;
-          if (IsOccupied(board_[build_position]) || Height(board_[build_position]) == kNumFloors + 1) {
+          if ((IsOccupied(board_[build_position]) && (move_direction_id + build_direction_id != 7)) || Height(board_[build_position]) == kNumFloors + 1) {
             continue;
           }
           legal_actions_.push_back(SantoriniAction(worker_id, move_direction_id, build_direction_id).action());
