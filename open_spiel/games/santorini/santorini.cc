@@ -266,7 +266,7 @@ void SantoriniState::ObservationTensor(Player player,
       }
     if (IsOccupied(board_[cell])){
       auto k = ((board_[cell] >> kNumFloorBits) == 1) == (current_player_ == 0) ? 0 : 1;
-      view[{kNumFloors + 1 + k, i, j}] = 1.0;
+      view[{kNumFloors + 1 + k, i, j}] = (float) h;
     }
   }
 }
