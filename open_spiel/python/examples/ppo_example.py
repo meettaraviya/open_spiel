@@ -35,6 +35,7 @@ import torch
 from torch.utils.tensorboard import SummaryWriter
 
 import pyspiel
+import open_spiel.python.games
 from open_spiel.python.pytorch.ppo import PPO
 from open_spiel.python.pytorch.ppo import PPOAgent
 from open_spiel.python.pytorch.ppo import PPOAtariAgent

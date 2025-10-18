@@ -30,7 +30,6 @@ warnings.warn(
     "issue #1206 for details."
 )
 
-
 def cascade(x, fns):
   for fn in fns:
     x = fn(x)
@@ -40,25 +39,31 @@ tfkl = tf.keras.layers
 conv_2d = functools.partial(tfkl.Conv2D, padding="same")
 
 
+# def batch_norm(training, updates, name):
+#   """A batch norm layer.
+
+#   Args:
+#     training: A placeholder of whether this is done in training or not.
+#     updates: A list to be extended with this layer's updates.
+#     name: Name of the layer.
+
+#   Returns:
+#     A function to apply to the previous layer.
+#   """
+#   bn = tfkl.BatchNormalization(name=name)
+#   def batch_norm_layer(x):
+#     # This emits a warning that training is a placeholder instead of a concrete
+#     # bool, but seems to work anyway.
+#     applied = bn(x, training=True)
+#     updates.extend(bn.updates)
+#     return applied
+#   return batch_norm_layer
+
 def batch_norm(training, updates, name):
-  """A batch norm layer.
-
-  Args:
-    training: A placeholder of whether this is done in training or not.
-    updates: A list to be extended with this layer's updates.
-    name: Name of the layer.
-
-  Returns:
-    A function to apply to the previous layer.
-  """
-  bn = tfkl.BatchNormalization(name=name)
-  def batch_norm_layer(x):
-    # This emits a warning that training is a placeholder instead of a concrete
-    # bool, but seems to work anyway.
-    applied = bn(x, training)
-    updates.extend(bn.updates)
-    return applied
-  return batch_norm_layer
+    def batch_norm_layer(x):
+        bn = tfkl.BatchNormalization(name=name, trainable=True)
+        return bn(x)
+    return batch_norm_layer
 
 
 def residual_layer(inputs, num_filters, kernel_size, training, updates, name):

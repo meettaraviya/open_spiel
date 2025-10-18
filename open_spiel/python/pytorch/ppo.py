@@ -233,7 +233,7 @@ class PPO(nn.Module):
         (self.steps_per_batch, self.num_envs, self.num_actions),
         dtype=torch.bool).to(device)
     self.obs = torch.zeros((self.steps_per_batch, self.num_envs) +
-                           self.input_shape).to(device)
+                           tuple(self.input_shape)).to(device)
     self.actions = torch.zeros((self.steps_per_batch, self.num_envs)).to(device)
     self.logprobs = torch.zeros(
         (self.steps_per_batch, self.num_envs)).to(device)
