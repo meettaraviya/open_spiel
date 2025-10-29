@@ -28,6 +28,7 @@ open_spiel.egg-info/
 
 # Swift build directory
 .build
+.vs
 
  # External git modules
 open_spiel/abseil-cpp/
