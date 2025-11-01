@@ -31,7 +31,6 @@ import numpy as np
 
 from open_spiel.python.observation import IIGObserverForPublicInfoGame
 import pyspiel
-from termcolor import colored
 import bisect
 
 _NUM_PLAYERS = 2
